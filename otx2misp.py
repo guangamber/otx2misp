@@ -194,12 +194,6 @@ def main():
     if otx.get_user("AlienVault"):
         logger.debug("OTX connection is verified.")
     
-    all_tags = misp.tags()
-    for test in all_tags:
-        test_name = test['name']
-        if test_name.startswith('1') or test_name.startswith('2') or test_name.startswith('.'):
-            misp.delete_tag(test)
-    exit(0)
     pulses = get_pulses(otx, get_start_date(config_data['otx']['last_days']))
     if len(pulses) == 0:
         logger.info("No new pulses retrirved. Ending.")
