@@ -3,12 +3,15 @@ import requests
 from pymisp import PyMISP, MISPEvent
 from OTXv2 import OTXv2
 from datetime import datetime
+import logging
 from .utils import convert_string_to_datetime, check_if_empty_att
 
 try:
     requests.packages.urllib3.disable_warnings()
 except:
     pass
+
+logger = logging.getLogger("otx2misp")
 
 def initialize_misp(config_data:dict) -> PyMISP:
     try:
@@ -32,22 +35,23 @@ def get_pulses(logger, otx: OTXv2, from_timestamp=None):
 
     return pulses
 
-def add_tags_to_event(logger, misp: PyMISP, event: MISPEvent, pulse: dict):
+def add_tags_to_event(misp: PyMISP, event: MISPEvent, pulse: dict):
     misp.tag(event, "Threat Source:OSINT")
     if 'tlp' in pulse:
         tag = f"tlp:{pulse['tlp']}"
         misp.tag(event, tag)
 
     if 'tags' in pulse:
-        for pulse_tag in pulse['tags'] and not pulse_tag.startswith('#'):
-            misp_tags = misp.search_tags(tagname=pulse_tag.lower())
-            if misp_tags:
-                misp.tag(misp_entity=event, tag=misp_tags[0]['Tag'])
-            else:
-                misp.tag(misp_entity=event, tag=pulse_tag)
-                logger.info("Tag does not exist. Added new tag:" + pulse_tag)
+        for pulse_tag in pulse['tags']:
+            if not pulse_tag.startswith('#'):
+                misp_tags = misp.search_tags(tagname=pulse_tag.lower())
+                if misp_tags:
+                    misp.tag(misp_entity=event, tag=misp_tags[0]['Tag'])
+                else:
+                    misp.tag(misp_entity=event, tag=pulse_tag)
+                    logger.info("Tag does not exist. Added new tag:" + pulse_tag)
 
-def add_iocs_to_event(logger,event: MISPEvent, pulse: dict):
+def add_iocs_to_event(event: MISPEvent, pulse: dict):
     ioc_type_mapping = {
         'IPv4': 'ip-src',
         'IPv6': 'ip-src',
@@ -92,7 +96,7 @@ def add_iocs_to_event(logger,event: MISPEvent, pulse: dict):
         else:
             logger.warning("Unsupported IOC type:" + key)
 
-def create_event(logger, misp: PyMISP, pulse: dict):
+def create_event(misp: PyMISP, pulse: dict):
     new_event = MISPEvent()
     new_event.distribution = 0
     new_event.analysis = 2
@@ -110,5 +114,5 @@ def create_event(logger, misp: PyMISP, pulse: dict):
     logger.debug("Pulse addedt MISP, ID:" +result['Event']['id'] + ", name: " + pulse['name'])
 
 
-def update_event(logger, misp: PyMISP, pulse: dict):
+def update_event(misp: PyMISP, pulse: dict):
     logger.debug("not yet implemented")

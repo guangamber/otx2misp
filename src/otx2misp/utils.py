@@ -6,15 +6,17 @@ from typing import Optional
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-# ... utility functions like load_config, setup_logger, etc.
-def setup_logger(logger, config_data:dict):
+logger = logging.getLogger("otx2misp")
+
+def setup_global_logger(config_data:dict):
+    logger = logging.getLogger("otx2misp")
     log_level_str = config_data['general'].get('logging_level', 'INFO')
     log_level = getattr(logging, log_level_str.upper(), logging.INFO)
     log_file = config_data['general'].get('log_file')
     if log_file is None:
-        log_file = 'default_log.log'
+        log_file = 'otx2misp_default.log'
     logger.setLevel(log_level)
-    handler = TimedRotatingFileHandler(log_file, when="midnight", interval=1, backupCount=7)
+    handler = TimedRotatingFileHandler(log_file, when="W0", interval=1, backupCount=4)
     handler.setLevel(log_level)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
