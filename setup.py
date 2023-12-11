@@ -6,7 +6,7 @@ def read_requirements():
 
 setup(
     name='otx2misp', 
-    version='1.0',
+    version='1.1',
     author='guangamber',
     author_email='guangamber',
     description='A short description of your project', 
