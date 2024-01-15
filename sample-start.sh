@@ -1,20 +1,25 @@
 #!/bin/bash
 
-# Load the user's profile - might be optional if full paths are specified correctly
-source $HOME/.bash_profile
+LOG_FILE="$HOME/otx2misp/cron_otx2misp.log"
+log_message() {
+    echo "$(date +"%Y-%m-%d %T"): $1" >> $LOG_FILE
+}
 
-# Full path to pyenv executable if it does not work
-PYENV="$HOME/.pyenv/bin/pyenv"
+log_message "Starting otx2misp cron job."
 
-# Initialize pyenv
+export PATH="$HOME/.pyenv/bin:$PATH"
 export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$($PYENV init -)"
 
-# Activate the specific Python version
-$PYENV shell 3.8.18
+cd $HOME/otx2misp
+# Activate the specific Python version, 3.8.18
+pyenv local 3.8.18
+{
+	pyenv exec otx2misp $HOME/otx2misp/misp.ini
+} &>> $LOG_FILE
 
-$PYENV exec otx2misp misp.ini
-
-# Deactivate the Python version
-$PYENV shell --unset
+# Check if otx2misp ran successfully
+if [ $? -eq 0 ]; then
+    log_message "otx2misp job completed successfully."
+else
+    log_message "Error: otx2misp job failed."
+fi
